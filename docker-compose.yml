@@ -1,0 +1,65 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+  client:
+    image: node:19.0.0-slim
+    command: sh -c "npm install && npm run dev"
+    container_name: client
+    ports:
+      - '3001:3001'
+    networks:
+      - dev_network
+    working_dir: /app/client
+    volumes:
+      - ./client:/app/client
+    depends_on:
+      - server
+
+  server:
+    image: node:19.0.0-slim
+    command: sh -c 'npm install && npm start'
+    container_name: server
+    ports:
+      - '3000:3000'
+    networks:
+      - dev_network
+    working_dir: /app/server
+    volumes:
+      - ./server:/app/server
+    depends_on:
+      - db-mongo
+      - db-psql
+
+  db-mongo:
+    image: "mongo"
+    ports:
+      - '27017:27017'
+    networks:
+      - dev_network
+    volumes:
+      - dbdata6:/data/db
+
+  db-psql:
+    image: postgres
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: test
+      PGDATA: /data/postgres
+    networks:
+      - dev_network
+    volumes:
+      - db:/var/lib/postgresql/data/
+
+networks:
+  dev_network:
+    driver: bridge
+
+volumes:
+  db:
+  dbdata6:

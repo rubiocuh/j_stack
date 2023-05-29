@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis
+    container_name: db
+    env_file:
+      - '.env'
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /data/postgres
+    ports:
+      - '${DB_PORT}:5432'
+      # volumes:
+      # - postgres_dev:/data/postgres
+    networks:
+      - dev_network
+    volumes:
+      - db:/var/lib/postgresql/data/
+
+  ds-db:
+    image: postgres:14.1-alpine
+    container_name: ds-db
+    env_file:
+      - '.env'
+    environment:
+      POSTGRES_USER: ${DS_DB_USER}
+      POSTGRES_PASSWORD: ${DS_DB_PASS}
+      POSTGRES_DB: ${DS_DB_NAME}
+      PGDATA: /data/postgres
+    ports:
+      - '${DS_DB_PORT}:5432'
+    networks:
+      - dev_network
+    volumes:
+      - db:/var/lib/postgresql/data/
+
+  server:
+    image: node:18-alpine
+    command: sh -c 'npm install && npm start'
+    container_name: server
+    ports:
+      - '${APP_PORT}:3000'
+      - '9229:9229'
+#    build:
+#      context: server
+#      dockerfile: Dockerfile
+#      args:
+#        progress: plain
+
+    env_file:
+      - '.env'
+    depends_on:
+      - db
+      - ds-db
+    #command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; npm start'
+    networks:
+      - dev_network
+    working_dir: /app/server
+    volumes:
+      - ./server:/app/server
+
+  client:
+    container_name: client
+    ports:
+      - '3001:3001'
+    image: node:18-alpine
+    command: sh -c "npm install && npm run dev"
+#    build:
+#      context: client
+#      dockerfile: Dockerfile
+    env_file:
+      - '.env'
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+#    depends_on:
+#      - server
+    networks:
+      - dev_network
+    working_dir: /app/client
+    volumes:
+      - ./client:/app/client
+
+networks:
+  dev_network:
+
+volumes:
+  db:
+    driver: local
