@@ -47,9 +47,9 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: test
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_SCHEMA}
       PGDATA: /data/postgres
     networks:
       - dev_network
