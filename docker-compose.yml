@@ -10,7 +10,7 @@ services:
     ports:
       - '3000:3000'
     networks:
-      - dev_network
+      - dev
     working_dir: /app/client
     volumes:
       - ./client:/app/client
@@ -19,45 +19,51 @@ services:
 
   server:
     image: node:19.0.0-slim
-    command: sh -c 'npm install && npm start'
+    command: sh -c 'npm install && npm run start:dev'
     container_name: server
     ports:
       - '3001:3001'
+    expose:
+      - '${DB_PG_PORT}'
     networks:
-      - dev_network
+      - dev
+    links:
+      - postgres
+      - mongo
     working_dir: /app/server
     volumes:
       - ./server:/app/server
     depends_on:
-      - db-mongo
-      - db-psql
+      - mongo
+      - postgres
 
-  db-mongo:
+  mongo:
     image: "mongo"
     ports:
-      - '27017:27017'
+      - '${DB_MG_PORT}:${DB_MG_PORT}'
     networks:
-      - dev_network
+      - dev
     volumes:
       - dbdata6:/data/db
 
-  db-psql:
+  postgres:
     image: postgres
     restart: always
     ports:
-      - '5432:5432'
+      - '${DB_PG_PORT}:${DB_PG_PORT}'
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_SCHEMA}
+      POSTGRES_USER: ${DB_PG_USER}
+      POSTGRES_PASSWORD: ${DB_PG_PASS}
+      POSTGRES_DB: ${DB_PG_SCHEMA}
+      POSTGRES_PORT: ${DB_PG_PORT}
       PGDATA: /data/postgres
     networks:
-      - dev_network
+      - dev
     volumes:
       - db:/var/lib/postgresql/data/
 
 networks:
-  dev_network:
+  dev:
     driver: bridge
 
 volumes:
